@@ -193,6 +193,30 @@ class KeirinBot:
         
         return "\n".join(lines)
     
+    def _create_demo_prediction(self, race: RaceInfo) -> PredictionResult:
+        """デモ用の予想を作成（必ずGOを返す）"""
+        return PredictionResult(
+            race_id=race.race_id,
+            reasoning=f"{race.bank_type}バンクの{race.velodrome}。1番山田の先行を軸に関東ラインが盤石。コメントからも「信頼して付いてきてほしい」と結束力の高さが伺える。2番佐藤が番手から差す展開も。",
+            devils_proof=DevilsProof(
+                scenarios=[
+                    "スタートで出遅れて位置取り失敗",
+                    "早めの仕掛けでスタミナ切れ",
+                    "後方からの突っ込みで接触落車"
+                ],
+                risk_probability=0.08
+            ),
+            decision="GO",
+            confidence_score=0.82,
+            bet_recommendations=[
+                BetRecommendation("sanrentan", ["1-2-4", "1-2-7"], 1.25, {"1-2-4": 8.5, "1-2-7": 12.3}),
+                BetRecommendation("wide", ["1-2"], 1.10, {"1-2": 1.5})
+            ],
+            primary_bet=BetRecommendation("sanrentan", ["1-2-4", "1-2-7"], 1.25, {"1-2-4": 8.5, "1-2-7": 12.3}),
+            comment="関東ラインの先行は鉄板。山田-佐藤の結束は固く、逃げ切り濃厚。",
+            weather_analysis=f"{race.weather.weather}、{race.weather.wind_direction}風{race.weather.wind_speed}m/s。先行にやや向かい風だが許容範囲内。"
+        )
+    
     def run_morning_job(self, target_velodrome: str = None, demo_mode: bool = False):
         """朝のジョブ: 予想配信"""
         logger.info("=" * 50)
@@ -218,8 +242,9 @@ class KeirinBot:
         # 学習データ取得
         learning_data = self.trader.get_learning_data()
         
+        # レースデータ取得
         if demo_mode:
-            logger.info("Running in demo mode")
+            logger.info("Running in demo mode - using demo race data")
             races = [create_demo_race_info()]
         else:
             today = datetime.now()
@@ -249,26 +274,20 @@ class KeirinBot:
                 logger.warning(f"Betting stopped: {reason}")
                 break
             
-            # AI予想
-            if self.ai_engine:
+            # ========================================
+            # 予想生成（デモモードは必ずGOを返す）
+            # ========================================
+            if demo_mode:
+                logger.info("Demo mode: using demo prediction (always GO)")
+                prediction = self._create_demo_prediction(race)
+            elif self.ai_engine:
+                logger.info("Using AI engine for prediction")
                 prediction = self.ai_engine.predict(race, learning_data)
             else:
-                prediction = PredictionResult(
-                    race_id=race.race_id,
-                    reasoning=f"{race.bank_type}バンクの{race.velodrome}。関東ラインの先行が有力。コメントからも結束力の高さが伺える。",
-                    devils_proof=DevilsProof(
-                        scenarios=["スタートで出遅れ", "早仕掛けでスタミナ切れ", "後方からの突っ込み"],
-                        risk_probability=0.08
-                    ),
-                    decision="GO",
-                    confidence_score=0.80,
-                    bet_recommendations=[
-                        BetRecommendation("sanrentan", ["1-2-4"], 1.2, {"1-2-4": 8.5})
-                    ],
-                    primary_bet=BetRecommendation("sanrentan", ["1-2-4"], 1.2, {"1-2-4": 8.5}),
-                    comment="関東ラインの先行は鉄板。山田-佐藤の結束は固い。",
-                    weather_analysis=f"{race.weather.weather}、{race.weather.wind_direction}風{race.weather.wind_speed}m/s。先行にやや影響あり。"
-                )
+                logger.info("No AI engine: using demo prediction")
+                prediction = self._create_demo_prediction(race)
+            
+            logger.info(f"Prediction result: {prediction.decision}, confidence: {prediction.confidence_score}")
             
             # マルチベット記録
             bet_recs = [
