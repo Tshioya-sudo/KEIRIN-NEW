@@ -1,0 +1,97 @@
+# 競輪予想Bot v2.0 - 朝のジョブ
+# データ取得・予想生成・LINE配信
+
+name: 🌅 Morning - Prediction
+
+on:
+  # 毎日 JST 9:00 (UTC 0:00) に実行
+  schedule:
+    - cron: '0 0 * * *'
+  
+  # 手動実行（Actionsタブから実行可能）
+  workflow_dispatch:
+    inputs:
+      velodrome:
+        description: '対象競輪場（空欄で全場）'
+        required: false
+        default: ''
+        type: string
+      demo_mode:
+        description: 'デモモード（APIなしでテスト）'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+  LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    
+    # タイムアウト設定
+    timeout-minutes: 15
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: 🔍 Check secrets
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "⚠️ Warning: GEMINI_API_KEY not set. Running in demo mode."
+          fi
+          if [ -z "$LINE_CHANNEL_ACCESS_TOKEN" ]; then
+            echo "⚠️ Warning: LINE_CHANNEL_ACCESS_TOKEN not set."
+          fi
+      
+      - name: 🚴 Run morning job
+        run: |
+          cd src
+          
+          ARGS="morning"
+          
+          # デモモード判定
+          if [ "${{ github.event.inputs.demo_mode }}" = "true" ] || [ -z "$GEMINI_API_KEY" ]; then
+            ARGS="$ARGS --demo"
+            echo "Running in demo mode"
+          fi
+          
+          # 競輪場指定
+          if [ -n "${{ github.event.inputs.velodrome }}" ]; then
+            ARGS="$ARGS --velodrome '${{ github.event.inputs.velodrome }}'"
+          fi
+          
+          echo "Executing: python bot.py $ARGS"
+          python bot.py $ARGS
+      
+      - name: 💾 Commit data changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "📊 Morning job - $(date +'%Y-%m-%d %H:%M') JST"
+          fi
+      
+      - name: 🚀 Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
