@@ -8,14 +8,14 @@
     "total_bets": 0,
     "wins": 0,
     "losses": 0,
-    "ken_count": 0,
+    "ken_count": 1,
     "total_wagered": 0,
     "total_returned": 0,
     "roi_percentage": 0.0,
     "current_losing_streak": 0,
     "max_losing_streak": 0,
     "daily_loss": 0,
-    "last_bet_date": null
+    "last_bet_date": "2025-12-16"
   },
   "risk_control": {
     "max_losing_streak_limit": 3,
@@ -23,7 +23,23 @@
     "is_stopped_today": false,
     "stop_reason": null
   },
-  "bet_history": [],
+  "bet_history": [
+    {
+      "bet_id": "bet_maebashi_11_20241216_2025-12-16T162739",
+      "race_id": "maebashi_11_20241216",
+      "timestamp": "2025-12-16T16:27:39.384559",
+      "decision": "KEN",
+      "confidence_score": 0.0,
+      "bets": [],
+      "total_amount": 0,
+      "expected_return": 0,
+      "actual_return": null,
+      "is_won": null,
+      "result_checked": false,
+      "winning_combination": "",
+      "kimarite": ""
+    }
+  ],
   "learning_logs": [],
   "racer_database": {},
   "pattern_analysis": {
