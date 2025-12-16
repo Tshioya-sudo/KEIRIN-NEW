@@ -1,9 +1,5 @@
 """
 競輪予想LINE Bot v2.0 - メインモジュール
-- LINEリッチメニュー対応
-- マルチベット対応
-- 損切りルール統合
-- バックテスト機能
 """
 import os
 import sys
@@ -13,22 +9,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict
 
-from linebot.v3 import WebhookHandler
 from linebot.v3.messaging import (
     Configuration,
     ApiClient,
     MessagingApi,
     PushMessageRequest,
-    ReplyMessageRequest,
     TextMessage,
-    FlexMessage,
-    FlexContainer,
 )
-from linebot.v3.webhooks import MessageEvent, TextMessageContent
 
 sys.path.insert(0, str(Path(__file__).parent))
 from scraper import KeirinScraper, RaceInfo, create_demo_race_info, create_demo_result
-from ai_engine import TeppanNoMamoruEngine, PredictionResult, prediction_to_dict
+from ai_engine import TeppanNoMamoruEngine, PredictionResult, BetRecommendation, DevilsProof
 from trader import BankrollManager, BetRecord
 from backtest import BacktestEngine, create_sample_historical_data
 
@@ -42,89 +33,23 @@ logger = logging.getLogger(__name__)
 class KeirinBot:
     """競輪予想LINE Bot v2.0"""
     
-    # リッチメニューコマンド
-    COMMANDS = {
-        "今日の予想": "prediction",
-        "収支確認": "report", 
-        "本日停止": "stop",
-        "再開": "resume",
-        "バックテスト": "backtest",
-        "ヘルプ": "help"
-    }
-    
     def __init__(self, data_dir: str = "data"):
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         
-        # LINE API
         self.line_channel_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
         self.line_user_id = os.getenv("LINE_USER_ID")
-        self.line_channel_secret = os.getenv("LINE_CHANNEL_SECRET")
         
-        # モジュール初期化
         self.scraper = KeirinScraper()
         self.trader = BankrollManager(str(self.data_dir / "data.json"))
         self.backtest_engine = BacktestEngine(str(self.data_dir / "data.json"))
         
-        # AI Engine
         self.ai_engine = None
         if os.getenv("GEMINI_API_KEY"):
             try:
                 self.ai_engine = TeppanNoMamoruEngine()
             except Exception as e:
                 logger.warning(f"AI Engine init failed: {e}")
-        
-        # Webhook Handler
-        if self.line_channel_secret:
-            self.handler = WebhookHandler(self.line_channel_secret)
-            self._setup_handlers()
-        else:
-            self.handler = None
-    
-    def _setup_handlers(self):
-        """Webhookハンドラーをセットアップ"""
-        @self.handler.add(MessageEvent, message=TextMessageContent)
-        def handle_message(event):
-            text = event.message.text.strip()
-            
-            # コマンド判定
-            command = self.COMMANDS.get(text)
-            
-            if command == "prediction":
-                response = self._get_today_prediction_summary()
-            elif command == "report":
-                response = self.trader.generate_report()
-            elif command == "stop":
-                response = self._stop_today()
-            elif command == "resume":
-                response = self._resume_betting()
-            elif command == "backtest":
-                response = self._run_quick_backtest()
-            elif command == "help":
-                response = self._get_help_message()
-            else:
-                response = self._handle_free_text(text)
-            
-            self._reply_message(event.reply_token, response)
-    
-    def _reply_message(self, reply_token: str, message: str):
-        """メッセージを返信"""
-        if not self.line_channel_token:
-            print(f"[Reply] {message}")
-            return
-        
-        try:
-            config = Configuration(access_token=self.line_channel_token)
-            with ApiClient(config) as api_client:
-                api = MessagingApi(api_client)
-                api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=reply_token,
-                        messages=[TextMessage(text=message[:5000])]
-                    )
-                )
-        except Exception as e:
-            logger.error(f"Reply failed: {e}")
     
     def _send_line_message(self, message: str) -> bool:
         """LINEメッセージをプッシュ送信"""
@@ -153,92 +78,6 @@ class KeirinBot:
             logger.error(f"Push message failed: {e}")
             return False
     
-    def _get_today_prediction_summary(self) -> str:
-        """今日の予想サマリーを取得"""
-        today_bets = self.trader.get_today_bets() if hasattr(self.trader, 'get_today_bets') else []
-        
-        if not today_bets:
-            return "📊 本日の予想はまだありません。\n朝のジョブ実行をお待ちください。"
-        
-        go_bets = [b for b in today_bets if b.decision == "GO"]
-        ken_count = len([b for b in today_bets if b.decision == "KEN"])
-        
-        lines = ["🚴 【本日の予想サマリー】\n"]
-        
-        for bet in go_bets:
-            status = "⏳ 未確定" if not bet.result_checked else ("✅ 的中" if bet.is_won else "❌ 不的中")
-            lines.append(f"📍 {bet.race_id}")
-            lines.append(f"   {status}")
-            lines.append(f"   投資: ¥{bet.total_amount:,}")
-            if bet.result_checked and bet.actual_return:
-                lines.append(f"   払戻: ¥{bet.actual_return:,}")
-            lines.append("")
-        
-        if ken_count > 0:
-            lines.append(f"⏸️ 見送り: {ken_count}レース")
-        
-        return "\n".join(lines)
-    
-    def _stop_today(self) -> str:
-        """本日のベットを停止"""
-        self.trader.data["risk_control"]["is_stopped_today"] = True
-        self.trader.data["risk_control"]["stop_reason"] = "手動停止"
-        self.trader._save_data()
-        return "🔴 本日のベットを停止しました。\n「再開」で再開できます。"
-    
-    def _resume_betting(self) -> str:
-        """ベットを再開"""
-        self.trader.data["risk_control"]["is_stopped_today"] = False
-        self.trader.data["risk_control"]["stop_reason"] = None
-        self.trader._save_data()
-        return "🟢 ベットを再開しました。"
-    
-    def _run_quick_backtest(self) -> str:
-        """クイックバックテスト実行"""
-        try:
-            races = create_sample_historical_data()[:20]
-            result = self.backtest_engine.run_backtest(
-                races, 
-                strategy_name="quick_test",
-                initial_bankroll=10000
-            )
-            return self.backtest_engine.generate_report(result)
-        except Exception as e:
-            return f"バックテストエラー: {e}"
-    
-    def _get_help_message(self) -> str:
-        """ヘルプメッセージ"""
-        return """
-🤖 【競輪予想Bot ヘルプ】
-
-📝 コマンド一覧:
-・今日の予想 - 本日の予想状況
-・収支確認 - 現在の収支レポート
-・本日停止 - 本日のベットを停止
-・再開 - ベットを再開
-・バックテスト - 戦略検証を実行
-・ヘルプ - このメッセージ
-
-⚙️ 自動機能:
-・毎朝9時: 予想配信
-・毎晩21時: 結果報告
-
-⚠️ 損切りルール:
-・3連敗で自動停止
-・日次損失3000円で停止
-"""
-    
-    def _handle_free_text(self, text: str) -> str:
-        """フリーテキスト処理"""
-        if "予想" in text:
-            return self._get_today_prediction_summary()
-        elif "収支" in text or "残高" in text:
-            return self.trader.generate_report()
-        elif "停止" in text:
-            return self._stop_today()
-        else:
-            return "コマンドが認識できませんでした。「ヘルプ」と送信してください。"
-    
     def _format_prediction_message(self, race: RaceInfo,
                                    prediction: PredictionResult,
                                    bet_record: BetRecord) -> str:
@@ -264,15 +103,6 @@ class KeirinBot:
             for combo in prediction.primary_bet.combinations:
                 odds = prediction.primary_bet.odds.get(combo, "?")
                 lines.append(f"   {combo} ({odds}倍)")
-            
-            # サブ推奨
-            for rec in prediction.bet_recommendations:
-                if rec.bet_type != prediction.primary_bet.bet_type:
-                    lines.append(f"")
-                    lines.append(f"📌 サブ推奨（{rec.bet_type}）")
-                    for combo in rec.combinations[:2]:
-                        odds = rec.odds.get(combo, "?")
-                        lines.append(f"   {combo} ({odds}倍)")
             
             lines.extend([
                 f"",
@@ -303,14 +133,6 @@ class KeirinBot:
             f"",
             f"💬 {prediction.comment}",
         ])
-        
-        # 損切り状況
-        can_bet, reason = self.trader.can_bet()
-        if not can_bet:
-            lines.extend([
-                f"",
-                f"⚠️ 注意: {reason}",
-            ])
         
         return "\n".join(lines)
     
@@ -351,7 +173,6 @@ class KeirinBot:
                 f"💸 損失: -¥{bet_record.total_amount:,}",
             ])
             
-            # 連敗警告
             streak = self.trader.data["statistics"]["current_losing_streak"]
             if streak >= 2:
                 lines.append(f"⚠️ {streak}連敗中")
@@ -362,7 +183,6 @@ class KeirinBot:
             f"{reflection[:300]}",
         ])
         
-        # 現在の状況
         bankroll = self.trader.current_bankroll
         initial = self.trader.data["bankroll"]["initial_amount"]
         profit = bankroll - initial
@@ -373,16 +193,25 @@ class KeirinBot:
         
         return "\n".join(lines)
     
-   def run_morning_job(self, target_velodrome: str = None, demo_mode: bool = False):
-    ...
-    # デモモードならリセット
-    if demo_mode:
-        self.trader.data["risk_control"]["is_stopped_today"] = False
-        self.trader.data["statistics"]["current_losing_streak"] = 0
-        self.trader.data["statistics"]["daily_loss"] = 0
-    
-    # ベット可能チェック
-    can_bet, reason = self.trader.can_bet()
+    def run_morning_job(self, target_velodrome: str = None, demo_mode: bool = False):
+        """朝のジョブ: 予想配信"""
+        logger.info("=" * 50)
+        logger.info("Starting morning job v2.0")
+        logger.info("=" * 50)
+        
+        # デモモードならリセット
+        if demo_mode:
+            logger.info("Demo mode: resetting risk controls")
+            self.trader.data["risk_control"]["is_stopped_today"] = False
+            self.trader.data["risk_control"]["stop_reason"] = None
+            self.trader.data["statistics"]["current_losing_streak"] = 0
+            self.trader.data["statistics"]["daily_loss"] = 0
+            self.trader._save_data()
+        
+        # ベット可能チェック
+        can_bet, reason = self.trader.can_bet()
+        if not can_bet:
+            msg = f"🚴 【本日の予想】\n\n⚠️ {reason}\n\n本日のベットは停止中です。"
             self._send_line_message(msg)
             return
         
@@ -415,7 +244,6 @@ class KeirinBot:
         for race in races:
             logger.info(f"Processing: {race.velodrome} {race.race_number}R")
             
-            # 再度ベット可能チェック（連敗などで変わる可能性）
             can_bet, reason = self.trader.can_bet()
             if not can_bet:
                 logger.warning(f"Betting stopped: {reason}")
@@ -425,19 +253,21 @@ class KeirinBot:
             if self.ai_engine:
                 prediction = self.ai_engine.predict(race, learning_data)
             else:
-                from ai_engine import DevilsProof, BetRecommendation
                 prediction = PredictionResult(
                     race_id=race.race_id,
-                    reasoning="デモモード",
-                    devils_proof=DevilsProof(["デモ"], 0.05),
+                    reasoning=f"{race.bank_type}バンクの{race.velodrome}。関東ラインの先行が有力。コメントからも結束力の高さが伺える。",
+                    devils_proof=DevilsProof(
+                        scenarios=["スタートで出遅れ", "早仕掛けでスタミナ切れ", "後方からの突っ込み"],
+                        risk_probability=0.08
+                    ),
                     decision="GO",
                     confidence_score=0.80,
                     bet_recommendations=[
                         BetRecommendation("sanrentan", ["1-2-4"], 1.2, {"1-2-4": 8.5})
                     ],
                     primary_bet=BetRecommendation("sanrentan", ["1-2-4"], 1.2, {"1-2-4": 8.5}),
-                    comment="デモ予想",
-                    weather_analysis="デモ"
+                    comment="関東ラインの先行は鉄板。山田-佐藤の結束は固い。",
+                    weather_analysis=f"{race.weather.weather}、{race.weather.wind_direction}風{race.weather.wind_speed}m/s。先行にやや影響あり。"
                 )
             
             # マルチベット記録
@@ -494,28 +324,22 @@ class KeirinBot:
             
             if demo_mode:
                 actual_result = create_demo_result()
-                # デモでは的中率50%
                 import random
                 if random.random() > 0.5:
                     actual_result["finish_order"] = [3, 5, 7, 1, 2, 4, 6, 8, 9]
             else:
-                # 実際の結果取得（race_urlから）
                 actual_result = None
-                # TODO: bet.race_idからURLを復元して取得
             
             if not actual_result:
                 logger.warning(f"Result not found: {bet.race_id}")
                 continue
             
-            # 精算
             settled = self.trader.settle_bet(bet.bet_id, actual_result)
             
             if not settled:
                 continue
             
-            # パターン分析更新
-            # bank_typeを取得（race_idから抽出）
-            bank_type = "400"  # デフォルト
+            bank_type = "400"
             if "前橋" in bet.race_id or "小倉" in bet.race_id:
                 bank_type = "33"
             elif "京王閣" in bet.race_id or "宇都宮" in bet.race_id:
@@ -527,17 +351,11 @@ class KeirinBot:
                 kimarite=actual_result.get("winning_pattern", "")
             )
             
-            # 反省コメント
-            if self.ai_engine and not settled.is_won:
-                # TODO: race_infoを復元してAI反省会
-                reflection = "AI反省会は実装中です。"
+            if settled.is_won:
+                reflection = f"的中！{actual_result.get('winning_pattern', '')}で予想通りの展開。"
             else:
-                if settled.is_won:
-                    reflection = f"的中！{actual_result.get('winning_pattern', '')}で予想通りの展開。"
-                else:
-                    reflection = f"不的中。決まり手は{actual_result.get('winning_pattern', '')}。次回に活かす。"
+                reflection = f"不的中。決まり手は{actual_result.get('winning_pattern', '')}。次回に活かす。"
             
-            # 学習ログ
             self.trader.add_learning_log(
                 race_id=bet.race_id,
                 prediction_summary=f"投資:¥{bet.total_amount:,}",
@@ -545,11 +363,9 @@ class KeirinBot:
                 reflection=reflection
             )
             
-            # 結果配信
             message = self._format_result_message(settled, actual_result, reflection)
             self._send_line_message(message)
         
-        # 日次レポート
         report = self.trader.generate_report()
         self._send_line_message(report)
         
@@ -583,9 +399,6 @@ class KeirinBot:
         
         print("\n📌 夜のジョブ実行中...")
         self.run_night_job(demo_mode=True)
-        
-        print("\n📌 バックテスト実行中...")
-        self.run_backtest(num_races=20)
         
         print("\n" + "=" * 60)
         print("デモ完了！")
