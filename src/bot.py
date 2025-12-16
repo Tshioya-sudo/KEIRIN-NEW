@@ -373,16 +373,16 @@ class KeirinBot:
         
         return "\n".join(lines)
     
-    def run_morning_job(self, target_velodrome: str = None, demo_mode: bool = False):
-        """朝のジョブ: 予想配信"""
-        logger.info("=" * 50)
-        logger.info("Starting morning job v2.0")
-        logger.info("=" * 50)
-        
-        # ベット可能チェック
-        can_bet, reason = self.trader.can_bet()
-        if not can_bet:
-            msg = f"🚴 【本日の予想】\n\n⚠️ {reason}\n\n本日のベットは停止中です。"
+   def run_morning_job(self, target_velodrome: str = None, demo_mode: bool = False):
+    ...
+    # デモモードならリセット
+    if demo_mode:
+        self.trader.data["risk_control"]["is_stopped_today"] = False
+        self.trader.data["statistics"]["current_losing_streak"] = 0
+        self.trader.data["statistics"]["daily_loss"] = 0
+    
+    # ベット可能チェック
+    can_bet, reason = self.trader.can_bet()
             self._send_line_message(msg)
             return
         
