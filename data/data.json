@@ -1,0 +1,49 @@
+{
+  "bankroll": {
+    "initial_amount": 10000,
+    "current_amount": 10000,
+    "last_updated": null
+  },
+  "statistics": {
+    "total_bets": 0,
+    "wins": 0,
+    "losses": 0,
+    "ken_count": 0,
+    "total_wagered": 0,
+    "total_returned": 0,
+    "roi_percentage": 0.0,
+    "current_losing_streak": 0,
+    "max_losing_streak": 0,
+    "daily_loss": 0,
+    "last_bet_date": null
+  },
+  "risk_control": {
+    "max_losing_streak_limit": 3,
+    "daily_loss_limit": 3000,
+    "is_stopped_today": false,
+    "stop_reason": null
+  },
+  "bet_history": [],
+  "learning_logs": [],
+  "racer_database": {},
+  "pattern_analysis": {
+    "bank_33_stats": {
+      "wins": 0,
+      "total": 0,
+      "patterns": {}
+    },
+    "bank_400_stats": {
+      "wins": 0,
+      "total": 0,
+      "patterns": {}
+    },
+    "bank_500_stats": {
+      "wins": 0,
+      "total": 0,
+      "patterns": {}
+    },
+    "weather_stats": {},
+    "kimarite_stats": {}
+  },
+  "backtest_results": []
+}

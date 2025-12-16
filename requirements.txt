@@ -1,0 +1,25 @@
+# Keirin Prediction Bot v2.0 - Dependencies
+# ==========================================
+
+# Web Scraping
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+
+# AI Engine (Google Gemini)
+google-generativeai>=0.8.0
+
+# LINE Messaging API
+line-bot-sdk>=3.5.0
+
+# Data Handling
+python-dateutil>=2.8.2
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Utilities
+tenacity>=8.2.0
+
+# Data Analysis (for backtest)
+pandas>=2.0.0
