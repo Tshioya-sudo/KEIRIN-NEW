@@ -1,17 +1,17 @@
 {
   "bankroll": {
     "initial_amount": 10000,
-    "current_amount": 21300,
-    "last_updated": "2025-12-19T03:52:10.566075"
+    "current_amount": 35350,
+    "last_updated": "2025-12-19T13:45:46.989528"
   },
   "statistics": {
     "total_bets": 13,
-    "wins": 10,
+    "wins": 13,
     "losses": 0,
     "ken_count": 2,
     "total_wagered": 8900,
-    "total_returned": 20200,
-    "roi_percentage": 274.07,
+    "total_returned": 34250,
+    "roi_percentage": 284.83,
     "current_losing_streak": 0,
     "max_losing_streak": 0,
     "daily_loss": 0,
@@ -521,11 +521,11 @@
       ],
       "total_amount": 1300,
       "expected_return": 12927.3,
-      "actual_return": null,
-      "is_won": null,
-      "result_checked": false,
-      "winning_combination": "",
-      "kimarite": ""
+      "actual_return": 5250,
+      "is_won": true,
+      "result_checked": true,
+      "winning_combination": "1-2",
+      "kimarite": "逃げ"
     },
     {
       "bet_id": "bet_kawasaki_9_20251219_2025-12-19T035210",
@@ -564,11 +564,11 @@
       ],
       "total_amount": 1100,
       "expected_return": 10795.3,
-      "actual_return": null,
-      "is_won": null,
-      "result_checked": false,
-      "winning_combination": "",
-      "kimarite": ""
+      "actual_return": 4400,
+      "is_won": true,
+      "result_checked": true,
+      "winning_combination": "1-2",
+      "kimarite": "逃げ"
     },
     {
       "bet_id": "bet_kokura_12_20251219_2025-12-19T035210",
@@ -607,11 +607,11 @@
       ],
       "total_amount": 1100,
       "expected_return": 10795.3,
-      "actual_return": null,
-      "is_won": null,
-      "result_checked": false,
-      "winning_combination": "",
-      "kimarite": ""
+      "actual_return": 4400,
+      "is_won": true,
+      "result_checked": true,
+      "winning_combination": "1-2",
+      "kimarite": "逃げ"
     }
   ],
   "learning_logs": [
@@ -684,6 +684,27 @@
       "prediction_summary": "投資:¥700",
       "result_summary": "[1, 2, 4]",
       "reflection": "的中！逃げで予想通りの展開。"
+    },
+    {
+      "timestamp": "2025-12-19T13:45:45.952904",
+      "race_id": "maebashi_11_20241216",
+      "prediction_summary": "投資:¥1,300",
+      "result_summary": "[1, 2, 4]",
+      "reflection": "的中！逃げで予想通りの展開。"
+    },
+    {
+      "timestamp": "2025-12-19T13:45:46.678662",
+      "race_id": "kawasaki_9_20251219",
+      "prediction_summary": "投資:¥1,100",
+      "result_summary": "[1, 2, 4]",
+      "reflection": "的中！逃げで予想通りの展開。"
+    },
+    {
+      "timestamp": "2025-12-19T13:45:46.991752",
+      "race_id": "kokura_12_20251219",
+      "prediction_summary": "投資:¥1,100",
+      "result_summary": "[1, 2, 4]",
+      "reflection": "的中！逃げで予想通りの展開。"
     }
   ],
   "racer_database": {},
@@ -694,8 +715,8 @@
       "patterns": {}
     },
     "bank_400_stats": {
-      "wins": 10,
-      "total": 10,
+      "wins": 13,
+      "total": 13,
       "patterns": {}
     },
     "bank_500_stats": {
@@ -706,8 +727,8 @@
     "weather_stats": {},
     "kimarite_stats": {
       "逃げ": {
-        "total": 10,
-        "predicted": 10
+        "total": 13,
+        "predicted": 13
       }
     }
   },
