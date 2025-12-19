@@ -1,21 +1,21 @@
 {
   "bankroll": {
     "initial_amount": 10000,
-    "current_amount": 24800,
-    "last_updated": "2025-12-18T13:50:04.008364"
+    "current_amount": 21300,
+    "last_updated": "2025-12-19T03:52:10.566075"
   },
   "statistics": {
-    "total_bets": 10,
+    "total_bets": 13,
     "wins": 10,
     "losses": 0,
     "ken_count": 2,
-    "total_wagered": 5400,
+    "total_wagered": 8900,
     "total_returned": 20200,
     "roi_percentage": 274.07,
     "current_losing_streak": 0,
     "max_losing_streak": 0,
     "daily_loss": 0,
-    "last_bet_date": "2025-12-18"
+    "last_bet_date": "2025-12-19"
   },
   "risk_control": {
     "max_losing_streak_limit": 3,
@@ -483,6 +483,135 @@
       "result_checked": true,
       "winning_combination": "1-2",
       "kimarite": "逃げ"
+    },
+    {
+      "bet_id": "bet_maebashi_11_20241216_2025-12-19T035210",
+      "race_id": "maebashi_11_20241216",
+      "timestamp": "2025-12-19T03:52:10.563301",
+      "decision": "GO",
+      "confidence_score": 0.82,
+      "bets": [
+        {
+          "type": "sanrentan",
+          "combinations": [
+            {
+              "combination": "1-2-4",
+              "amount": 600,
+              "odds": 8.5
+            },
+            {
+              "combination": "1-2-7",
+              "amount": 600,
+              "odds": 12.3
+            }
+          ],
+          "subtotal": 1200
+        },
+        {
+          "type": "wide",
+          "combinations": [
+            {
+              "combination": "1-2",
+              "amount": 100,
+              "odds": 1.5
+            }
+          ],
+          "subtotal": 100
+        }
+      ],
+      "total_amount": 1300,
+      "expected_return": 12927.3,
+      "actual_return": null,
+      "is_won": null,
+      "result_checked": false,
+      "winning_combination": "",
+      "kimarite": ""
+    },
+    {
+      "bet_id": "bet_kawasaki_9_20251219_2025-12-19T035210",
+      "race_id": "kawasaki_9_20251219",
+      "timestamp": "2025-12-19T03:52:10.564832",
+      "decision": "GO",
+      "confidence_score": 0.82,
+      "bets": [
+        {
+          "type": "sanrentan",
+          "combinations": [
+            {
+              "combination": "1-2-4",
+              "amount": 500,
+              "odds": 8.5
+            },
+            {
+              "combination": "1-2-7",
+              "amount": 500,
+              "odds": 12.3
+            }
+          ],
+          "subtotal": 1000
+        },
+        {
+          "type": "wide",
+          "combinations": [
+            {
+              "combination": "1-2",
+              "amount": 100,
+              "odds": 1.5
+            }
+          ],
+          "subtotal": 100
+        }
+      ],
+      "total_amount": 1100,
+      "expected_return": 10795.3,
+      "actual_return": null,
+      "is_won": null,
+      "result_checked": false,
+      "winning_combination": "",
+      "kimarite": ""
+    },
+    {
+      "bet_id": "bet_kokura_12_20251219_2025-12-19T035210",
+      "race_id": "kokura_12_20251219",
+      "timestamp": "2025-12-19T03:52:10.566075",
+      "decision": "GO",
+      "confidence_score": 0.82,
+      "bets": [
+        {
+          "type": "sanrentan",
+          "combinations": [
+            {
+              "combination": "1-2-4",
+              "amount": 500,
+              "odds": 8.5
+            },
+            {
+              "combination": "1-2-7",
+              "amount": 500,
+              "odds": 12.3
+            }
+          ],
+          "subtotal": 1000
+        },
+        {
+          "type": "wide",
+          "combinations": [
+            {
+              "combination": "1-2",
+              "amount": 100,
+              "odds": 1.5
+            }
+          ],
+          "subtotal": 100
+        }
+      ],
+      "total_amount": 1100,
+      "expected_return": 10795.3,
+      "actual_return": null,
+      "is_won": null,
+      "result_checked": false,
+      "winning_combination": "",
+      "kimarite": ""
     }
   ],
   "learning_logs": [
