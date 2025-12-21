@@ -1,9 +1,8 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/README.md b/README.md
-index 9da6caa99c55c3c153b05b8c0e625a8b546e922f..aa191d3cab8121db1e1ed4f6cd67cf7d369cb031 100644
+index 9da6caa99c55c3c153b05b8c0e625a8b546e922f..0eef5b64a48dfed4d6ac2638ad56714a49d9ab11 100644
 --- a/README.md
 +++ b/README.md
-@@ -28,56 +28,66 @@ keirin-bot/
+@@ -28,56 +28,67 @@ keirin-bot/
  │   ├── ai_engine.py     # AI予想エンジン v2.0
  │   ├── trader.py        # 資金管理（損切り・選手DB）
  │   ├── backtest.py      # バックテストエンジン
@@ -36,8 +35,9 @@ index 9da6caa99c55c3c153b05b8c0e625a8b546e922f..aa191d3cab8121db1e1ed4f6cd67cf7d
 +   ```bash
 +   ssh-keygen -t ed25519 -C "keirin-bot-deploy" -f ~/.ssh/keirin_bot_deploy
 +   ```
-+2. `~/.ssh/keirin_bot_deploy.pub` の内容を GitHub → Settings → Deploy keys → **Add deploy key** に貼り付け、名前を付けて保存
++2. `~/.ssh/keirin_bot_deploy.pub` の内容（公開鍵部分だけ）を GitHub → Settings → Deploy keys → **Add deploy key** にそのまま貼り付け、名前を付けて保存
 +   - 読み取り専用で十分です（`Allow write access` は通常不要）
++   - 秘密鍵（`~/.ssh/keirin_bot_deploy`）はサーバー側に残し、GitHubには渡さないでください
 +3. サーバー側で `~/.ssh/keirin_bot_deploy` を利用できるようにし、`git clone git@github.com:YOUR_USERNAME/keirin-bot.git` などのSSHアクセスで動作確認してください。
 +
 +### 4. Actionsを有効化
@@ -72,6 +72,3 @@ index 9da6caa99c55c3c153b05b8c0e625a8b546e922f..aa191d3cab8121db1e1ed4f6cd67cf7d
  > 「10回の的中より、1回のトリガミ・ハズレを憎む」
  
  ### 分析要素
- 
-EOF
-)
