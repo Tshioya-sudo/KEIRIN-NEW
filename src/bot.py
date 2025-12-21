@@ -1,9 +1,11 @@
  (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/src/bot.py b/src/bot.py
-index a337f2d6a4df2f5c9216b3d7a6c62044d69649cd..4bf56ee2f493f4835a0638a983eb2e4f8017599f 100644
+index a337f2d6a4df2f5c9216b3d7a6c62044d69649cd..8cf39b3e489ca438ea41797adbf3f58d28d6b766 100644
 --- a/src/bot.py
 +++ b/src/bot.py
-@@ -1,125 +1,140 @@
+@@ -1,125 +1,142 @@
++#!/usr/bin/env python3
++# -*- coding: utf-8 -*-
  """
  競輪予想LINE Bot v2.1 - メインモジュール
  - スクレイピング失敗時はデモデータにフォールバック
@@ -148,7 +150,7 @@ index a337f2d6a4df2f5c9216b3d7a6c62044d69649cd..4bf56ee2f493f4835a0638a983eb2e4f
              lines.extend([
                  f"",
                  f"🌤️ 天候分析:",
-@@ -262,85 +277,90 @@ class KeirinBot:
+@@ -262,85 +279,90 @@ class KeirinBot:
          logger.info("=" * 50)
          logger.info("Starting morning job v2.1")
          logger.info("=" * 50)
@@ -240,7 +242,7 @@ index a337f2d6a4df2f5c9216b3d7a6c62044d69649cd..4bf56ee2f493f4835a0638a983eb2e4f
                  logger.info("No AI engine: using demo prediction")
                  prediction = self._create_demo_prediction(race)
              
-@@ -349,52 +369,53 @@ class KeirinBot:
+@@ -349,52 +371,53 @@ class KeirinBot:
              # マルチベット記録
              bet_recs = [
                  {
