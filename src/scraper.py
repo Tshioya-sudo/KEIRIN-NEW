@@ -5,6 +5,7 @@
 - オッズ取得機能
 - 天候・風向き取得
 """
+import os
 import time
 import logging
 import re
@@ -120,14 +121,25 @@ class KeirinScraper:
         "小倉", "久留米", "武雄", "佐世保", "別府", "熊本"
     ]
     
-    def __init__(self, timeout: int = 30):
+    def __init__(self, timeout: int = 30, use_system_proxy: bool = False):
+        env_proxy_flag = os.getenv("USE_SYSTEM_PROXY", "").lower() in ("1", "true", "yes")
+        use_system_proxy = use_system_proxy or env_proxy_flag
+
         self.session = requests.Session()
+        # CI環境などでプロキシ経由になると403が返ってしまうケースがあるため、
+        # 明示的に無効化（必要に応じて use_system_proxy=True で切り替え）
+        if not use_system_proxy:
+            self.session.trust_env = False
         self.session.headers.update({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
             "Accept-Language": "ja,en-US;q=0.7,en;q=0.3",
         })
         self.timeout = timeout
+        self._proxy_retry_used = False
+
+    def _has_system_proxy(self) -> bool:
+        return any(os.getenv(k) for k in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"))
     
     def _get_bank_type(self, velodrome: str) -> str:
         for bank_type, velodromes in self.BANK_TYPES.items():
@@ -150,6 +162,24 @@ class KeirinScraper:
             response.encoding = response.apparent_encoding or 'utf-8'
             logger.info(f"Response status: {response.status_code}, length: {len(response.text)}")
             return BeautifulSoup(response.text, "lxml")
+        except requests.exceptions.ProxyError as e:
+            logger.error("ProxyError: keirin.jp への到達がブロックされています。use_system_proxy=True も試してください。")
+            logger.debug(f"Proxy error detail: {e}")
+            if not self.session.trust_env and not self._proxy_retry_used and self._has_system_proxy():
+                logger.info("Retrying with system proxy settings from environment")
+                self.session.trust_env = True
+                self._proxy_retry_used = True
+                return self._fetch_page(url)
+            return None
+        except requests.exceptions.ConnectionError as e:
+            logger.error("ConnectionError: ネットワークに接続できません。デモモードを利用してください。")
+            logger.debug(f"Connection error detail: {e}")
+            if not self.session.trust_env and not self._proxy_retry_used and self._has_system_proxy():
+                logger.info("Retrying with system proxy settings from environment")
+                self.session.trust_env = True
+                self._proxy_retry_used = True
+                return self._fetch_page(url)
+            return None
         except Exception as e:
             logger.error(f"Fetch error: {e}")
             return None

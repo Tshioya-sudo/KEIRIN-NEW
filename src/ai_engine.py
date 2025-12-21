@@ -11,12 +11,16 @@ import logging
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, field, asdict
 
+from dotenv import load_dotenv
 import google.generativeai as genai
 
 from scraper import RaceInfo, Racer, LineFormation, WeatherInfo, OddsInfo
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+load_dotenv()
 
 
 @dataclass
@@ -319,6 +323,7 @@ class TeppanNoMamoruEngine:
             "sanrentan": odds.sanrentan,
             "sanrenpuku": odds.sanrenpuku,
             "nirentan": odds.nirentan,
+            "nirenpuku": odds.nirenpuku,
             "wide": odds.wide
         }
         

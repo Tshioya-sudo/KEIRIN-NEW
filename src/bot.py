@@ -1,6 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 競輪予想LINE Bot v2.1 - メインモジュール
 - スクレイピング失敗時はデモデータにフォールバック
+- ファイル先頭にシェルスクリプトの断片などが混入すると Python が読み取れず
+  IndentationError になるため、このヘッダー行はそのまま残してください
 """
 import os
 import sys
@@ -10,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict
 
+from dotenv import load_dotenv
 from linebot.v3.messaging import (
     Configuration,
     ApiClient,
@@ -31,6 +36,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+load_dotenv()
+
+
 class KeirinBot:
     """競輪予想LINE Bot v2.1"""
     
@@ -41,7 +49,10 @@ class KeirinBot:
         self.line_channel_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
         self.line_user_id = os.getenv("LINE_USER_ID")
         
-        self.scraper = KeirinScraper()
+        use_system_proxy = os.getenv("USE_SYSTEM_PROXY", "").lower() in ("1", "true", "yes")
+        if use_system_proxy:
+            logger.info("KeirinScraper: using system proxy settings (USE_SYSTEM_PROXY enabled)")
+        self.scraper = KeirinScraper(use_system_proxy=use_system_proxy)
         self.trader = BankrollManager(str(self.data_dir / "data.json"))
         self.backtest_engine = BacktestEngine(str(self.data_dir / "data.json"))
         
@@ -83,21 +94,29 @@ class KeirinBot:
     def _format_prediction_message(self, race: RaceInfo,
                                    prediction: PredictionResult,
                                    bet_record: BetRecord,
-                                   is_demo: bool = False) -> str:
+                                   is_demo: bool = False,
+                                   notice: str = "") -> str:
         """予想メッセージをフォーマット"""
         decision_emoji = "🔥" if prediction.decision == "GO" else "⏸️"
         demo_tag = "【デモ】" if is_demo else ""
-        
+
         lines = [
             f"🚴 {demo_tag}【鉄板の守 本日の予想】",
             f"",
+        ]
+
+        if notice:
+            lines.append(notice)
+            lines.append("")
+
+        lines.extend([
             f"📍 {race.velodrome} {race.race_number}R",
             f"🏟️ {race.bank_type}バンク / {race.race_grade}",
             f"🌤️ {race.weather.weather} / 風:{race.weather.wind_direction}{race.weather.wind_speed}m/s",
             f"",
             f"{decision_emoji} 判定: {prediction.decision}",
             f"📊 自信度: {prediction.confidence_score:.0%}",
-        ]
+        ])
         
         if prediction.decision == "GO" and prediction.primary_bet:
             lines.extend([
@@ -284,6 +303,7 @@ class KeirinBot:
         
         # レースデータ取得
         use_demo_data = False
+        fallback_notice = ""
         
         if demo_mode:
             logger.info("Demo mode: using demo race data")
@@ -313,12 +333,16 @@ class KeirinBot:
             except Exception as e:
                 logger.error(f"Scraping failed: {e}")
                 races = []
-            
+
             # スクレイピング失敗時はデモデータにフォールバック
             if not races:
                 logger.warning("No races from scraping, falling back to demo data")
                 races = self._create_demo_races()
                 use_demo_data = True
+                fallback_notice = (
+                    "⚠️ スクレイピングに失敗したためデモデータで配信しています。"
+                    "ネットワークやプロキシ設定を確認し、必要に応じて USE_SYSTEM_PROXY=1 を設定してください。"
+                )
         
         go_predictions = []
         
@@ -371,8 +395,9 @@ class KeirinBot:
         if go_predictions:
             for race, prediction, bet_record in go_predictions:
                 message = self._format_prediction_message(
-                    race, prediction, bet_record, 
-                    is_demo=use_demo_data
+                    race, prediction, bet_record,
+                    is_demo=use_demo_data,
+                    notice=fallback_notice
                 )
                 self._send_line_message(message)
         else:

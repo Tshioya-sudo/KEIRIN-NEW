@@ -50,17 +50,44 @@ GitHubでこのリポジトリをForkしてください。
 | `LINE_CHANNEL_ACCESS_TOKEN` | LINE Bot | [LINE Developers](https://developers.line.biz/) |
 | `LINE_USER_ID` | 通知先ユーザーID | LINE Developers Console |
 
-### 3. Actionsを有効化
+### 3. Deploy keys を追加（サーバーや自前のrunnerでGitHubへSSH接続する場合）
+
+1. デプロイ先サーバーでSSH鍵を作成（例）
+   ```bash
+   ssh-keygen -t ed25519 -C "keirin-bot-deploy" -f ~/.ssh/keirin_bot_deploy
+   ```
+2. `~/.ssh/keirin_bot_deploy.pub` の内容（公開鍵部分だけ）を GitHub → Settings → Deploy keys → **Add deploy key** にそのまま貼り付け、名前を付けて保存
+   - 読み取り専用で十分です（`Allow write access` は通常不要）
+   - 秘密鍵（`~/.ssh/keirin_bot_deploy`）はサーバー側に残し、GitHubには渡さないでください
+3. サーバー側で `~/.ssh/keirin_bot_deploy` を利用できるようにし、`git clone git@github.com:YOUR_USERNAME/keirin-bot.git` などのSSHアクセスで動作確認してください。
+
+### 4. Actionsを有効化
 
 1. リポジトリの **Actions** タブをクリック
 2. 「I understand my workflows...」をクリックして有効化
 
-### 4. 手動実行でテスト
+### 5. 手動実行でテスト
 
 1. **Actions** タブ → 左側の **🌅 Morning - Prediction** を選択
 2. 右側の **Run workflow** ボタンをクリック
 3. **demo_mode** にチェックを入れる
 4. **Run workflow** をクリック
+
+### トラブルシューティング
+- `python bot.py morning` 実行時に `diff --git a/src/bot.py...` で始まる `SyntaxError` が出る場合は、`bot.py` にパッチ文面が誤って貼り付いています。
+  - `git checkout -- src/bot.py` で元の内容に戻すか、リポジトリを再クローンしてから実行してください。
+  - パッチ適用時は、提示された `diff` をファイルに貼るのではなく `git apply` で適用してください。
+  - 正しい適用手順（例）
+    1. 受け取ったパッチ全文をそのまま一時ファイルへ保存:
+       ```bash
+       cat <<'PATCH' > /tmp/update.patch
+       # ここに提示されたdiff全文を貼る
+       PATCH
+       ```
+    2. リポジトリのルートで適用: `git apply --3way /tmp/update.patch`
+    3. `python -m compileall src` などで構文エラーがないか確認
+
+    ※ 既存ファイルを全削除してパッチ本文を貼り付ける必要はありません。`git apply` に任せる方が安全です。
 
 ## 📱 LINEコマンド
 
