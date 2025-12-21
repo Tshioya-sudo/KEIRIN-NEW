@@ -1,4 +1,3 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/src/ai_engine.py b/src/ai_engine.py
 index 658ec0bb3db08fe5915ab48a232631b1b251fd07..7e90707a681ac16cbe5e529504a05459d82fa75a 100644
 --- a/src/ai_engine.py
@@ -106,6 +105,3 @@ index 658ec0bb3db08fe5915ab48a232631b1b251fd07..7e90707a681ac16cbe5e529504a05459
                      "スタートで出遅れ位置取り失敗",
                      "早めの仕掛けでスタミナ切れ",
                      "後方からの突っ込みで接触"
- 
-EOF
-)
