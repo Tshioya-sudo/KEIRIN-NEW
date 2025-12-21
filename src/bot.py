@@ -1,14 +1,15 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/src/bot.py b/src/bot.py
-index a337f2d6a4df2f5c9216b3d7a6c62044d69649cd..8cf39b3e489ca438ea41797adbf3f58d28d6b766 100644
+index a337f2d6a4df2f5c9216b3d7a6c62044d69649cd..a2485eb49ef1fe7abc39979dbbe4c17c4540cee8 100644
 --- a/src/bot.py
 +++ b/src/bot.py
-@@ -1,125 +1,142 @@
+@@ -1,125 +1,144 @@
 +#!/usr/bin/env python3
 +# -*- coding: utf-8 -*-
  """
  競輪予想LINE Bot v2.1 - メインモジュール
  - スクレイピング失敗時はデモデータにフォールバック
++- ファイル先頭にシェルスクリプトの断片などが混入すると Python が読み取れず
++  IndentationError になるため、このヘッダー行はそのまま残してください
  """
  import os
  import sys
@@ -150,7 +151,7 @@ index a337f2d6a4df2f5c9216b3d7a6c62044d69649cd..8cf39b3e489ca438ea41797adbf3f58d
              lines.extend([
                  f"",
                  f"🌤️ 天候分析:",
-@@ -262,85 +279,90 @@ class KeirinBot:
+@@ -262,85 +281,90 @@ class KeirinBot:
          logger.info("=" * 50)
          logger.info("Starting morning job v2.1")
          logger.info("=" * 50)
@@ -242,7 +243,7 @@ index a337f2d6a4df2f5c9216b3d7a6c62044d69649cd..8cf39b3e489ca438ea41797adbf3f58d
                  logger.info("No AI engine: using demo prediction")
                  prediction = self._create_demo_prediction(race)
              
-@@ -349,52 +371,53 @@ class KeirinBot:
+@@ -349,52 +373,53 @@ class KeirinBot:
              # マルチベット記録
              bet_recs = [
                  {
@@ -298,6 +299,3 @@ index a337f2d6a4df2f5c9216b3d7a6c62044d69649cd..8cf39b3e489ca438ea41797adbf3f58d
              self._send_line_message(f"🌙 【本日の収支報告】\n\n{report}")
              return
          
- 
-EOF
-)
