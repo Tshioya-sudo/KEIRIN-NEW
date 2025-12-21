@@ -1,4 +1,3 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/src/scraper.py b/src/scraper.py
 index 2a7f3c5b09b34b037aecfdbdb30605251971c3a8..cff332ba7d0c2aa0b40b420025f1165acd404e49 100644
 --- a/src/scraper.py
@@ -148,6 +147,3 @@ index 2a7f3c5b09b34b037aecfdbdb30605251971c3a8..cff332ba7d0c2aa0b40b420025f1165a
          # 開催場を探す（複数のセレクターを試す）
          selectors = [
              ".kaisaiList a",
- 
-EOF
-)
